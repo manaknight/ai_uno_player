@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI UNO Player</title>
+    <style>
+      .card {
+        margin: 10px;
+      }
+    </style>
   </head>
   <body>
     <!-- HTML -->
@@ -11,43 +16,31 @@
     <input type="number" name="player" id="player" />
     <br />
     <br />
+    <label>Action Type</label>
+    <input
+      type="radio"
+      name="type"
+      id="type_add"
+      value="add to hand"
+      checked
+    />Add to hand
+    <input
+      type="radio"
+      name="type"
+      id="type_play"
+      value="play to discard pile"
+    />Play to discard pile <br /><br />
     <label>Hand of the AI Player</label>
-    <div id="hand">
-      <div class="card" onclick="addToHands('red 5')">red 5</div>
-      <div class="card" onclick="addToHands('yellow 3')">yellow 3</div>
-      <div class="card" onclick="addToHands('green 7')">green 7</div>
-      <div class="card" onclick="addToHands('blue skip')">blue skip</div>
-      <div class="card" onclick="addToHands('wild')">wild</div>
-    </div>
+    <div id="hand"></div>
     <br />
     <br />
     <label>Rest of Card available</label>
-    <div id="rest">
-      <div class="card" onclick="playCard('red 1')">red 1</div>
-      <div class="card" onclick="playCard('yellow 4')">yellow 4</div>
-      <div class="card" onclick="playCard('green reverse')">green reverse</div>
-      <div class="card" onclick="playCard('blue +2')">blue +2</div>
-      <div class="card" onclick="playCard('wild draw four')">
-        wild draw four
-      </div>
-    </div>
+    <div id="rest"></div>
     <br />
     <br />
     <label>Discard Pile</label>
-    <div id="discard pile"></div>
+    <div id="discard_pile"></div>
     <br />
-    <script>
-      function addToHands(card) {
-        hands.push(card);
-        document.querySelector(`#hand .card[data-card="${card}"]`).remove();
-      }
-
-      function playCard(card) {
-        discard.push(card);
-        document.querySelector(`#rest .card[data-card="${card}"]`).remove();
-        finiteStateMachine(discard[discard.length - 1], hands);
-      }
-    </script>
 
     <script>
       // JavaScript
@@ -107,14 +100,7 @@
         "wild",
         "wild draw four",
       ];
-      let hands = [
-        // Example hand for a player
-        "red 5",
-        "yellow 3",
-        "green 7",
-        "blue skip",
-        "wild",
-      ];
+      let hands = [];
       let num_players = 1;
       document
         .getElementById("player")
@@ -196,11 +182,85 @@
           )
         ) {
           action = "playMatchingCard";
-        } else {
+        } else if (
+          hands.some((card) => card === "wild" || card === "wild draw four")
+        ) {
           action = "playChangeColor";
+        } else {
+          let nextCard = all_cards.pop();
+          actions.drawACard(lastPlayed, nextCard);
         }
         actions[action](lastPlayed);
       }
+
+      function addToHands(card) {
+        hands.push(card);
+        all_cards = all_cards.filter((c) => c !== card);
+        renderRest();
+        renderHands();
+      }
+
+      function playCard(card) {
+        discard.push(card);
+        all_cards = all_cards.filter((c) => c !== card);
+        renderRest();
+        renderDiscard();
+        finiteStateMachine(discard[discard.length - 1], hands);
+      }
+
+      function handleCardClick(card) {
+        let actionType = document.querySelector(
+          'input[name="type"]:checked'
+        ).value;
+        if (actionType === "add to hand") {
+          addToHands(card);
+        } else if (actionType === "play to discard pile") {
+          playCard(card);
+        }
+      }
+
+      function renderRest() {
+        const restDiv = document.getElementById("rest");
+        restDiv.innerHTML = "";
+        all_cards.forEach((card) => {
+          let cardButton = document.createElement("button");
+          cardButton.textContent = card;
+          cardButton.className = "card";
+          cardButton.setAttribute("data-card", card);
+          cardButton.onclick = () => handleCardClick(card);
+          restDiv.appendChild(cardButton);
+        });
+      }
+
+      function renderHands() {
+        const handDiv = document.getElementById("hand");
+        handDiv.innerHTML = "";
+        hands.forEach((card) => {
+          let cardDiv = document.createElement("div");
+          cardDiv.textContent = card;
+          cardDiv.className = "card";
+          cardDiv.setAttribute("data-card", card);
+          handDiv.appendChild(cardDiv);
+        });
+      }
+
+      function renderDiscard() {
+        const discardDiv = document.getElementById("discard_pile");
+        discardDiv.innerHTML = "";
+        discard.forEach((card) => {
+          let cardDiv = document.createElement("div");
+          cardDiv.textContent = card;
+          cardDiv.className = "card";
+          cardDiv.setAttribute("data-card", card);
+          discardDiv.appendChild(cardDiv);
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderRest();
+        renderHands();
+        renderDiscard();
+      });
     </script>
   </body>
 </html>
