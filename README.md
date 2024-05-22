@@ -838,3 +838,21 @@ I clicked play_card and got this response "Action: playPass, Cards: red skip, gr
 
 The correct action is draw card since user doesnt have any blue or 7 card or wild card
 ```
+
+# iteration 7
+
+```
+given hand of:
+red 4
+red 7
+yellow 7
+green 6
+yellow +2
+
+given discard of :
+blue 3
+
+I clicked play_card and got this response "Action: playChangeColor, Cards: wild draw four, yellow"
+
+The correct action is draw card since user doesnt have any blue or 7 card or wild card
+```

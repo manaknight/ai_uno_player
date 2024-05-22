@@ -99,14 +99,14 @@
         "wild",
         "wild draw four",
       ];
-      let hands = [];
+      let hands = ["red 4", "red 7", "yellow 7", "green 6", "yellow +2"];
       let num_players = 1;
       document
         .getElementById("player")
         .addEventListener("input", function (event) {
           num_players = parseInt(event.target.value);
         });
-      let discard = [];
+      let discard = ["blue 3"];
       let actions = {
         playMatchingCard: function (lastPlayed) {
           let [color, value] = lastPlayed.split(" ");
@@ -181,18 +181,20 @@
           )
         ) {
           action = "playMatchingCard";
-        } else if (
-          hands.some((card) => card === "wild" || card === "wild draw four")
-        ) {
-          action = "playChangeColor";
         } else if (canDraw) {
           let nextCard = all_cards.pop();
           actions.drawACard(lastPlayed, nextCard);
           return;
         } else {
+          alert("No valid moves available. Draw a card.");
           return;
         }
         let result = actions[action](lastPlayed);
+        if (result.length === 0 && canDraw) {
+          let nextCard = all_cards.pop();
+          actions.drawACard(lastPlayed, nextCard);
+          return;
+        }
         alert(`Action: ${action}, Cards: ${result.join(", ")}`);
         renderRest();
         renderHands();
