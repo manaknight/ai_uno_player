@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI UNO Player</title>
+  </head>
+  <body>
+    <!-- HTML -->
+    <label># of players</label>
+    <input type="number" name="player" id="player" />
+    <br />
+    <br />
+    <label>Hand of the AI Player</label>
+    <div id="hand">
+      <div class="card" onclick="addToHands('red 5')">red 5</div>
+      <div class="card" onclick="addToHands('yellow 3')">yellow 3</div>
+      <div class="card" onclick="addToHands('green 7')">green 7</div>
+      <div class="card" onclick="addToHands('blue skip')">blue skip</div>
+      <div class="card" onclick="addToHands('wild')">wild</div>
+    </div>
+    <br />
+    <br />
+    <label>Rest of Card available</label>
+    <div id="rest">
+      <div class="card" onclick="playCard('red 1')">red 1</div>
+      <div class="card" onclick="playCard('yellow 4')">yellow 4</div>
+      <div class="card" onclick="playCard('green reverse')">green reverse</div>
+      <div class="card" onclick="playCard('blue +2')">blue +2</div>
+      <div class="card" onclick="playCard('wild draw four')">
+        wild draw four
+      </div>
+    </div>
+    <br />
+    <br />
+    <label>Discard Pile</label>
+    <div id="discard pile"></div>
+    <br />
+    <script>
+      function addToHands(card) {
+        hands.push(card);
+        document.querySelector(`#hand .card[data-card="${card}"]`).remove();
+      }
+
+      function playCard(card) {
+        discard.push(card);
+        document.querySelector(`#rest .card[data-card="${card}"]`).remove();
+        finiteStateMachine(discard[discard.length - 1], hands);
+      }
+    </script>
+
+    <script>
+      // JavaScript
+      let all_cards = [
+        "red 0",
+        "red 1",
+        "red 2",
+        "red 3",
+        "red 4",
+        "red 5",
+        "red 6",
+        "red 7",
+        "red 8",
+        "red 9",
+        "red skip",
+        "red reverse",
+        "red +2",
+        "yellow 0",
+        "yellow 1",
+        "yellow 2",
+        "yellow 3",
+        "yellow 4",
+        "yellow 5",
+        "yellow 6",
+        "yellow 7",
+        "yellow 8",
+        "yellow 9",
+        "yellow skip",
+        "yellow reverse",
+        "yellow +2",
+        "green 0",
+        "green 1",
+        "green 2",
+        "green 3",
+        "green 4",
+        "green 5",
+        "green 6",
+        "green 7",
+        "green 8",
+        "green 9",
+        "green skip",
+        "green reverse",
+        "green +2",
+        "blue 0",
+        "blue 1",
+        "blue 2",
+        "blue 3",
+        "blue 4",
+        "blue 5",
+        "blue 6",
+        "blue 7",
+        "blue 8",
+        "blue 9",
+        "blue skip",
+        "blue reverse",
+        "blue +2",
+        "wild",
+        "wild draw four",
+      ];
+      let hands = [
+        // Example hand for a player
+        "red 5",
+        "yellow 3",
+        "green 7",
+        "blue skip",
+        "wild",
+      ];
+      let num_players = 1;
+      document
+        .getElementById("player")
+        .addEventListener("input", function (event) {
+          num_players = parseInt(event.target.value);
+        });
+      let discard = [
+        // Example discard pile with the last played card
+        "red 7",
+      ];
+      let actions = {
+        playMatchingCard: function (lastPlayed) {
+          let matchingCards = hands.filter((card) => {
+            let [color, value] = lastPlayed.split(" ");
+            return card.includes(color) || card.includes(value);
+          });
+          hands = hands.filter((card) => !matchingCards.includes(card));
+          return matchingCards;
+        },
+        playPlus: function (lastPlayed) {
+          let plusCards = hands.filter(
+            (card) => card.includes("+2") || card === "wild draw four"
+          );
+          hands = hands.filter((card) => !plusCards.includes(card));
+          return plusCards;
+        },
+        playPass: function (lastPlayed) {
+          let skipCards = hands.filter((card) => card.includes("skip"));
+          hands = hands.filter((card) => !skipCards.includes(card));
+          return skipCards;
+        },
+        playReverse: function (lastPlayed) {
+          let reverseCards = hands.filter((card) => card.includes("reverse"));
+          hands = hands.filter((card) => !reverseCards.includes(card));
+          return reverseCards;
+        },
+        playChangeColor: function (lastPlayed) {
+          let wildCard = hands.find(
+            (card) => card === "wild" || card === "wild draw four"
+          );
+          if (wildCard) {
+            hands = hands.filter((card) => card !== wildCard);
+            // Choose the color most commonly in hand
+            let colors = hands
+              .map((card) => card.split(" ")[0])
+              .filter((color) =>
+                ["red", "yellow", "green", "blue"].includes(color)
+              );
+            let colorCounts = colors.reduce((acc, color) => {
+              acc[color] = (acc[color] || 0) + 1;
+              return acc;
+            }, {});
+            let mostCommonColor = Object.keys(colorCounts).reduce((a, b) =>
+              colorCounts[a] > colorCounts[b] ? a : b
+            );
+            return [wildCard, mostCommonColor];
+          }
+          return [];
+        },
+        drawACard: function (lastPlayed, nextCard) {
+          hands.push(nextCard);
+          finiteStateMachine(lastPlayed, hands);
+        },
+      };
+
+      function finiteStateMachine(lastPlayed, hands) {
+        let action;
+        if (lastPlayed.includes("+2") || lastPlayed === "wild draw four") {
+          action = "playPlus";
+        } else if (hands.some((card) => card.includes("skip"))) {
+          action = "playPass";
+        } else if (hands.some((card) => card.includes("reverse"))) {
+          action = "playReverse";
+        } else if (
+          hands.some(
+            (card) =>
+              card.includes(lastPlayed.split(" ")[0]) ||
+              card.includes(lastPlayed.split(" ")[1])
+          )
+        ) {
+          action = "playMatchingCard";
+        } else {
+          action = "playChangeColor";
+        }
+        actions[action](lastPlayed);
+      }
+    </script>
+  </body>
+</html>
