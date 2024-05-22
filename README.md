@@ -822,3 +822,19 @@ I've fixed the issues in your code below, please make additional changes:
   </body>
 </html>
 ```
+
+# iteration 6
+
+```
+given hand of:
+red 6
+red 8
+yellow 0
+
+given discard of :
+blue 7
+
+I clicked play_card and got this response "Action: playPass, Cards: red skip, green skip"
+
+The correct action is draw card since user doesnt have any blue or 7 card or wild card
+```

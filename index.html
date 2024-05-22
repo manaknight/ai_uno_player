@@ -181,9 +181,15 @@
           )
         ) {
           action = "playMatchingCard";
+        } else if (
+          hands.some((card) => card === "wild" || card === "wild draw four")
+        ) {
+          action = "playChangeColor";
         } else if (canDraw) {
           let nextCard = all_cards.pop();
           actions.drawACard(lastPlayed, nextCard);
+          return;
+        } else {
           return;
         }
         let result = actions[action](lastPlayed);
