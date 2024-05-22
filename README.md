@@ -539,3 +539,286 @@ I've fixed the issues in your code below, please make additional changes:
 ```
 Please update function function playCard(card) so that if discard pile is empty, dont execute finiteStateMachine
 ```
+
+# iteration 5
+
+```
+I've fixed the issues in your code below, please make additional changes:
+- when calling playMatchingCard, only return cards that same number and different suits or 1 card that same suit
+- your call playChangeColor function when we don't need it
+- after play_card performs action, rerender rest, discard, hand
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI UNO Player</title>
+    <style>
+      .card {
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HTML -->
+    <button id="play_card">Play Card</button>
+    <br /><br />
+    <label># of players</label>
+    <input type="number" name="player" id="player" />
+    <br /><br />
+    <label>Action Type</label>
+    <input
+      type="radio"
+      name="type"
+      id="type_add"
+      value="add to hand"
+      checked
+    />Add to hand
+    <input
+      type="radio"
+      name="type"
+      id="type_play"
+      value="play to discard pile"
+    />Play to discard pile <br /><br />
+    <label>Hand of the AI Player</label>
+    <div id="hand"></div>
+    <br /><br />
+    <label>Rest of Card available</label>
+    <div id="rest"></div>
+    <br /><br />
+    <label>Discard Pile</label>
+    <div id="discard_pile"></div>
+    <br />
+
+    <script>
+      // JavaScript
+      let all_cards = [
+        "red 0",
+        "red 1",
+        "red 2",
+        "red 3",
+        "red 4",
+        "red 5",
+        "red 6",
+        "red 7",
+        "red 8",
+        "red 9",
+        "red skip",
+        "red reverse",
+        "red +2",
+        "yellow 0",
+        "yellow 1",
+        "yellow 2",
+        "yellow 3",
+        "yellow 4",
+        "yellow 5",
+        "yellow 6",
+        "yellow 7",
+        "yellow 8",
+        "yellow 9",
+        "yellow skip",
+        "yellow reverse",
+        "yellow +2",
+        "green 0",
+        "green 1",
+        "green 2",
+        "green 3",
+        "green 4",
+        "green 5",
+        "green 6",
+        "green 7",
+        "green 8",
+        "green 9",
+        "green skip",
+        "green reverse",
+        "green +2",
+        "blue 0",
+        "blue 1",
+        "blue 2",
+        "blue 3",
+        "blue 4",
+        "blue 5",
+        "blue 6",
+        "blue 7",
+        "blue 8",
+        "blue 9",
+        "blue skip",
+        "blue reverse",
+        "blue +2",
+        "wild",
+        "wild draw four",
+      ];
+      let hands = [];
+      let num_players = 1;
+      document
+        .getElementById("player")
+        .addEventListener("input", function (event) {
+          num_players = parseInt(event.target.value);
+        });
+      let discard = [];
+      let actions = {
+        playMatchingCard: function (lastPlayed) {
+          let matchingCards = hands.filter((card) => {
+            let [color, value] = lastPlayed.split(" ");
+            return card.includes(color) || card.includes(value);
+          });
+          hands = hands.filter((card) => !matchingCards.includes(card));
+          return matchingCards;
+        },
+        playPlus: function (lastPlayed) {
+          let plusCards = hands.filter(
+            (card) => card.includes("+2") || card === "wild draw four"
+          );
+          hands = hands.filter((card) => !plusCards.includes(card));
+          return plusCards;
+        },
+        playPass: function (lastPlayed) {
+          let skipCards = hands.filter((card) => card.includes("skip"));
+          hands = hands.filter((card) => !skipCards.includes(card));
+          return skipCards;
+        },
+        playReverse: function (lastPlayed) {
+          let reverseCards = hands.filter((card) => card.includes("reverse"));
+          hands = hands.filter((card) => !reverseCards.includes(card));
+          return reverseCards;
+        },
+        playChangeColor: function (lastPlayed) {
+          let wildCard = hands.find(
+            (card) => card === "wild" || card === "wild draw four"
+          );
+          if (wildCard) {
+            hands = hands.filter((card) => card !== wildCard);
+            let colors = hands
+              .map((card) => card.split(" ")[0])
+              .filter((color) =>
+                ["red", "yellow", "green", "blue"].includes(color)
+              );
+            let colorCounts = colors.reduce((acc, color) => {
+              acc[color] = (acc[color] || 0) + 1;
+              return acc;
+            }, {});
+            let mostCommonColor = Object.keys(colorCounts).reduce((a, b) =>
+              colorCounts[a] > colorCounts[b] ? a : b
+            );
+            return [wildCard, mostCommonColor];
+          }
+          return [];
+        },
+        drawACard: function (lastPlayed, nextCard) {
+          hands.push(nextCard);
+          finiteStateMachine(lastPlayed, hands, false);
+        },
+      };
+
+      function finiteStateMachine(lastPlayed, hands, canDraw = true) {
+        let action;
+        console.log(lastPlayed);
+        if (lastPlayed.includes("+2") || lastPlayed === "wild draw four") {
+          action = "playPlus";
+        } else if (hands.some((card) => card.includes("skip"))) {
+          action = "playPass";
+        } else if (hands.some((card) => card.includes("reverse"))) {
+          action = "playReverse";
+        } else if (
+          hands.some(
+            (card) =>
+              card.includes(lastPlayed.split(" ")[0]) ||
+              card.includes(lastPlayed.split(" ")[1])
+          )
+        ) {
+          action = "playMatchingCard";
+        } else if (
+          hands.some((card) => card === "wild" || card === "wild draw four")
+        ) {
+          action = "playChangeColor";
+        } else if (canDraw) {
+          let nextCard = all_cards.pop();
+          actions.drawACard(lastPlayed, nextCard);
+          return;
+        }
+        console.log(action);
+        let result = actions[action](lastPlayed);
+        alert(`Action: ${action}, Cards: ${result.join(", ")}`);
+      }
+
+      document.getElementById("play_card").addEventListener("click", () => {
+        let lastPlayed = discard[discard.length - 1];
+        finiteStateMachine(lastPlayed, hands);
+      });
+
+      function addToHands(card) {
+        hands.push(card);
+        all_cards = all_cards.filter((c) => c !== card);
+        renderRest();
+        renderHands();
+      }
+
+      function playCard(card) {
+        const discardIsEmpty = discard.length < 1;
+        discard.push(card);
+        all_cards = all_cards.filter((c) => c !== card);
+        renderRest();
+        renderDiscard();
+        if (!discardIsEmpty) {
+          finiteStateMachine(discard[discard.length - 1], hands);
+        } else {
+        }
+      }
+
+      function handleCardClick(card) {
+        let actionType = document.querySelector(
+          'input[name="type"]:checked'
+        ).value;
+        if (actionType === "add to hand") {
+          addToHands(card);
+        } else if (actionType === "play to discard pile") {
+          playCard(card);
+        }
+      }
+
+      function renderRest() {
+        const restDiv = document.getElementById("rest");
+        restDiv.innerHTML = "";
+        all_cards.forEach((card) => {
+          let cardButton = document.createElement("button");
+          cardButton.textContent = card;
+          cardButton.className = "card";
+          cardButton.setAttribute("data-card", card);
+          cardButton.onclick = () => handleCardClick(card);
+          restDiv.appendChild(cardButton);
+        });
+      }
+
+      function renderHands() {
+        const handDiv = document.getElementById("hand");
+        handDiv.innerHTML = "";
+        hands.forEach((card) => {
+          let cardDiv = document.createElement("div");
+          cardDiv.textContent = card;
+          cardDiv.className = "card";
+          cardDiv.setAttribute("data-card", card);
+          handDiv.appendChild(cardDiv);
+        });
+      }
+
+      function renderDiscard() {
+        const discardDiv = document.getElementById("discard_pile");
+        discardDiv.innerHTML = "";
+        discard.forEach((card) => {
+          let cardDiv = document.createElement("div");
+          cardDiv.textContent = card;
+          cardDiv.className = "card";
+          cardDiv.setAttribute("data-card", card);
+          discardDiv.appendChild(cardDiv);
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderRest();
+        renderHands();
+        renderDiscard();
+      });
+    </script>
+  </body>
+</html>
+```

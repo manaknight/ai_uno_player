@@ -109,12 +109,16 @@
       let discard = [];
       let actions = {
         playMatchingCard: function (lastPlayed) {
-          let matchingCards = hands.filter((card) => {
-            let [color, value] = lastPlayed.split(" ");
-            return card.includes(color) || card.includes(value);
-          });
-          hands = hands.filter((card) => !matchingCards.includes(card));
-          return matchingCards;
+          let [color, value] = lastPlayed.split(" ");
+          let sameSuitCard = hands.find((card) => card.includes(color));
+          let sameNumberDifferentSuits = hands.filter(
+            (card) => card.includes(value) && !card.includes(color)
+          );
+          hands = hands.filter(
+            (card) =>
+              !sameNumberDifferentSuits.includes(card) && card !== sameSuitCard
+          );
+          return sameSuitCard ? [sameSuitCard] : sameNumberDifferentSuits;
         },
         playPlus: function (lastPlayed) {
           let plusCards = hands.filter(
@@ -177,10 +181,6 @@
           )
         ) {
           action = "playMatchingCard";
-        } else if (
-          hands.some((card) => card === "wild" || card === "wild draw four")
-        ) {
-          action = "playChangeColor";
         } else if (canDraw) {
           let nextCard = all_cards.pop();
           actions.drawACard(lastPlayed, nextCard);
@@ -188,6 +188,9 @@
         }
         let result = actions[action](lastPlayed);
         alert(`Action: ${action}, Cards: ${result.join(", ")}`);
+        renderRest();
+        renderHands();
+        renderDiscard();
       }
 
       document.getElementById("play_card").addEventListener("click", () => {
@@ -210,7 +213,6 @@
         renderDiscard();
         if (!discardIsEmpty) {
           finiteStateMachine(discard[discard.length - 1], hands);
-        } else {
         }
       }
 
