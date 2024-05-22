@@ -12,10 +12,11 @@
   </head>
   <body>
     <!-- HTML -->
+    <button id="play_card">Play Card</button>
+    <br /><br />
     <label># of players</label>
     <input type="number" name="player" id="player" />
-    <br />
-    <br />
+    <br /><br />
     <label>Action Type</label>
     <input
       type="radio"
@@ -32,12 +33,10 @@
     />Play to discard pile <br /><br />
     <label>Hand of the AI Player</label>
     <div id="hand"></div>
-    <br />
-    <br />
+    <br /><br />
     <label>Rest of Card available</label>
     <div id="rest"></div>
-    <br />
-    <br />
+    <br /><br />
     <label>Discard Pile</label>
     <div id="discard_pile"></div>
     <br />
@@ -107,10 +106,7 @@
         .addEventListener("input", function (event) {
           num_players = parseInt(event.target.value);
         });
-      let discard = [
-        // Example discard pile with the last played card
-        "red 7",
-      ];
+      let discard = [];
       let actions = {
         playMatchingCard: function (lastPlayed) {
           let matchingCards = hands.filter((card) => {
@@ -143,7 +139,6 @@
           );
           if (wildCard) {
             hands = hands.filter((card) => card !== wildCard);
-            // Choose the color most commonly in hand
             let colors = hands
               .map((card) => card.split(" ")[0])
               .filter((color) =>
@@ -162,11 +157,11 @@
         },
         drawACard: function (lastPlayed, nextCard) {
           hands.push(nextCard);
-          finiteStateMachine(lastPlayed, hands);
+          finiteStateMachine(lastPlayed, hands, false);
         },
       };
 
-      function finiteStateMachine(lastPlayed, hands) {
+      function finiteStateMachine(lastPlayed, hands, canDraw = true) {
         let action;
         if (lastPlayed.includes("+2") || lastPlayed === "wild draw four") {
           action = "playPlus";
@@ -186,12 +181,19 @@
           hands.some((card) => card === "wild" || card === "wild draw four")
         ) {
           action = "playChangeColor";
-        } else {
+        } else if (canDraw) {
           let nextCard = all_cards.pop();
           actions.drawACard(lastPlayed, nextCard);
+          return;
         }
-        actions[action](lastPlayed);
+        let result = actions[action](lastPlayed);
+        alert(`Action: ${action}, Cards: ${result.join(", ")}`);
       }
+
+      document.getElementById("play_card").addEventListener("click", () => {
+        let lastPlayed = discard[discard.length - 1];
+        finiteStateMachine(lastPlayed, hands);
+      });
 
       function addToHands(card) {
         hands.push(card);
@@ -201,11 +203,15 @@
       }
 
       function playCard(card) {
+        const discardIsEmpty = discard.length < 1;
         discard.push(card);
         all_cards = all_cards.filter((c) => c !== card);
         renderRest();
         renderDiscard();
-        finiteStateMachine(discard[discard.length - 1], hands);
+        if (!discardIsEmpty) {
+          finiteStateMachine(discard[discard.length - 1], hands);
+        } else {
+        }
       }
 
       function handleCardClick(card) {
